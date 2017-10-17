@@ -2,6 +2,7 @@
 /**
 SQLite3.
 #code-php#
+wfPlugin::includeonce('wf/sqlite3_v1');
 $sqlite = new PluginWfSqlite3_v1();
 $sqlite->filename = '/pat/to/db/database.db';
 $sqlite->open();
@@ -13,8 +14,8 @@ echo '</pre>';
 #code#
  */
 class PluginWfSqlite3_v1{
-  private $filename = null;
-  private $db = null;
+  public $filename = null;
+  public $db = null;
   /**
    * Open db.
    */
@@ -22,7 +23,7 @@ class PluginWfSqlite3_v1{
     if(!$this->filename){
       throw new Exception("PluginWfSqlite3_v1 says filname is not set.");
     }
-    $this->db = new SQLite3($this->filename);
+    $this->db = new SQLite3(wfSettings::replaceDir($this->filename));
   }
   /**
    * Execute db.
@@ -39,18 +40,27 @@ class PluginWfSqlite3_v1{
    * @param string $value
    * @return array
    */
-  public function query($value){
+  public function query($value, $one = false){
     if(!$this->db){
       throw new Exception("PluginWfSqlite3_v1 says db is not set.");
     }
     $result = $this->db->query($value);
     $row = array(); 
-    $i = 0; 
-    while($res = $result->fetchArray(SQLITE3_ASSOC)){ 
-       $row[$i] = $res;
-       $i++; 
+    if(!$one){
+      $i = 0;
+      while($res = $result->fetchArray(SQLITE3_ASSOC)){ 
+         $row[$i] = $res;
+         $i++; 
+      }
+      return $row;
+    }else{
+      $row = array();
+      while($res = $result->fetchArray(SQLITE3_ASSOC)){ 
+         $row = $res;
+         break;
+      }
+      return $row;
     }
-    return $row;
   }
   /**
    * Test plugin by using a widget.
@@ -85,7 +95,6 @@ class PluginWfSqlite3_v1{
      */
     wfPlugin::includeonce('wf/array');
     $data = new PluginWfArray($data);
-    $data->set('data/filename', wfSettings::replaceDir($data->get('data/filename')));
     /**
      * Open db.
      */
